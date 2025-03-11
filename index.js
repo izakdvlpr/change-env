@@ -1,5 +1,7 @@
-const childProcess = require('node:child_process');
-const util = require('node:util');
+#!/usr/bin/env node
+
+const childProcess = require('child_process');
+const util = require('util');
 
 const colorette = require('colorette');
 const commander = require('commander');
@@ -45,8 +47,8 @@ program
     await exec(`git config --global user.name ${config[type].username}`)
     await exec(`git config --global user.email ${config[type].email}`)
     await exec(`git config --global user.signingkey ${config[type].gpgKey}`)
-    
-    await exec(`eval "$(ssh-agent -s)" && ssh-add ${config[type].sshPath}`)
+    await exec('eval "$(ssh-agent -s)"')
+    await exec(`ssh-add ${config[type].sshPath}`)
     
     console.log(colors.green(`Usuário alterado para "${config[type].username}".`))
     console.log(colors.green(`Email alterado para "${config[type].email}".`))
