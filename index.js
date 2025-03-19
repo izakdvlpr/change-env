@@ -17,7 +17,7 @@ const config = {
   },
   work: {
     username: 'r1isaque',
-    email: 'isaque@r1engenhria.com',
+    email: 'isaque@r1engenharia.com',
     gpgKey: '7BA4947D6ED2E9D7',
     sshPath: '~/.ssh/work',
   }
