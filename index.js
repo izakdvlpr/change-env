@@ -17,78 +17,80 @@ const config = {
   },
   work: {
     username: 'r1isaque',
-    email: 'isaque@r1engenhria.com',
+    email: 'isaque@r1engenharia.com',
     gpgKey: '7BA4947D6ED2E9D7',
     sshPath: '~/.ssh/work',
   }
 }
 
-cli()
+main()
 
-async function cli() {
-  const availableFlags = ['--user', '--ssh', '--gpg']
-
-  const flags = process.argv.slice(2).reduce((acc, flag) => {
-    if (availableFlags.includes(flag)) {
-      acc[flag.replace('--', '')] = true
-    }
-    
-    return acc
-  }, {})
-
-  if (process.argv.length < 3) {
-    console.log(
-      colors.yellow(`
-        Usage: change-env [options]
-
-        CLI para mudar o tipo de ambiente
-
-        Options:
-          --user     Muda o usuário do Git (nome e email)
-          --ssh      Muda a chave SSH usada para autenticação
-          --gpg      Muda a chave GPG usada para assinar commits
-      `)
-    )
-  }
-
+async function main() {
   const type = await getType()
   
-  if (flags.user) {
-    changeUser(type)
-  }
+  await unsetUser()
+  await unsetGPG()
   
-  if (flags.gpg) {
-    changeGPG(type)
-  }
+  await changeUser(type)
+  await changeGPG(type)
+  await changeSSH(type)
+}
+
+async function unsetUser() {
+  const unsetUserNameCommand = 'git config --global --unset user.name'
+  const unsetUserEmailCommand = 'git config --global --unset user.email'
   
-  if (flags.ssh) {
-    changeSSH(type)
-  }
+  await exec(unsetUserNameCommand).catch(() => {})
+  await exec(unsetUserEmailCommand).catch(() => {})
+  
+  console.log(colors.gray(unsetUserNameCommand))
+  console.log(colors.gray(unsetUserEmailCommand))
+  console.log(colors.green(`Usuário removido.`))
+  console.log(colors.green(`Email removido.`))
 }
 
 async function changeUser(type) {
-  await exec(`git config --global user.name ${config[type].username}`)
-  await exec(`git config --global user.email ${config[type].email}`)
+  const changeUserNameCommand = `git config --global user.name ${config[type].username}`
+  const changeUserEmailCommand = `git config --global user.email ${config[type].email}`
   
+  await exec(changeUserNameCommand).catch(() => {})
+  await exec(changeUserEmailCommand).catch(() => {})
+  
+  console.log(colors.gray(changeUserNameCommand))
+  console.log(colors.gray(changeUserEmailCommand))
   console.log(colors.green(`Usuário alterado para "${config[type].username}".`))
   console.log(colors.green(`Email alterado para "${config[type].email}".`))
 }
 
-async function changeSSH(type) {
-  await exec(`eval "$(ssh-agent -s)" && ssh-add ${config[type].sshPath}`)
+async function unsetGPG() {
+  const unsetGPGCommand = 'git config --global --unset user.signingkey'
   
-  console.log(colors.green(`eval "$(ssh-agent -s)" && ssh-add ${config[type].sshPath}`))
+  await exec(unsetGPGCommand).catch(() => {})
+  
+  console.log(colors.gray(unsetGPGCommand))
+  console.log(colors.green(`Chave GPG removida.`))
+}
+
+async function changeGPG(type) {
+  const changeGPGCommand = `git config --global user.signingkey ${config[type].gpgKey}`
+  
+  await exec(changeGPGCommand).catch(() => {})
+  
+  console.log(colors.gray(changeGPGCommand))
+  console.log(colors.green(`Chave GPG mudada para "${config[type].gpgKey}".`))
+}
+
+async function changeSSH(type) {
+  const changeSSHCommand = `eval "$(ssh-agent -s)" && ssh-add ${config[type].sshPath}`
+  
+  await exec(changeSSHCommand).catch(() => {})
+  
+  console.log(colors.gray(changeSSHCommand))
   console.log(colors.green(`Chave SSH adicionada ao agente.`))
   console.log(colors.green(`Chave SSH mudada para "${config[type].sshPath}".`))
 }
 
-async function changeGPG(type) {
-  await exec(`git config --global user.signingkey ${config[type].gpgKey}`)
-  
-  console.log(colors.green(`Chave GPG mudada para "${config[type].gpgKey}".`))
-}
-
-async function getType(defaultValue) {
+async function getType() {
   const { type } = await inquirer.prompt([
     {
       type: 'list',
@@ -97,8 +99,7 @@ async function getType(defaultValue) {
       choices: [
         { name: 'Pessoal', value: 'personal' },
         { name: 'Trabalho', value: 'work' },
-      ],
-      default: defaultValue
+      ]
     }
   ])
   
